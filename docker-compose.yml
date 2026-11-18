@@ -1,0 +1,36 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openbim-api
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://openbim:openbim@db:5432/openbim
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: openbim-db
+    environment:
+      POSTGRES_DB: openbim
+      POSTGRES_USER: openbim
+      POSTGRES_PASSWORD: openbim
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: openbim-redis
+
+volumes:
+  postgres_data:
