@@ -264,3 +264,152 @@ docker compose build api
 ```
 
 Do not try to solve the whole backend in one session.
+## Docker progress — latest session
+
+The Docker setup is now working and has been pushed to GitHub.
+
+### What was completed
+
+- Created `Dockerfile`
+- Created `docker-compose.yml`
+- Created `.env.example`
+- Added `.dockerignore`
+- Fixed a Docker build issue caused by `.venv` being included in the Docker build context
+- Successfully built the API image
+- Started PostgreSQL, Redis, and the FastAPI API with Docker Compose
+- Committed and pushed the Docker setup to GitHub
+
+### Docker build issue fixed
+
+The first API image build failed because Docker transferred a very large build context, approximately 168 MB, likely including `.venv`.
+
+Adding `.dockerignore` reduced the build context to 5.46 kB.
+
+The API image then built successfully:
+
+```text
+✔ Image openbim-data-backend-api Built
+```
+
+### Docker Compose services
+
+The following services started successfully:
+
+- `openbim-api`
+- `openbim-db`
+- `openbim-redis`
+
+The API logged:
+
+```text
+Uvicorn running on http://0.0.0.0:8000
+Application startup complete.
+```
+
+### Git commit pushed
+
+The Docker setup was committed and pushed with this commit:
+
+```text
+0b83f6f chore: add Docker setup and environment example
+```
+
+## Important: project location
+
+Always run project commands from the project folder:
+
+```bash
+cd ~/openbim-data-backend
+```
+
+Do **not** run Git commands from the home directory (`~`).  
+The home directory also appears to be a separate Git repository and contains many unrelated files.
+
+## How to restart the project
+
+Start the full stack in the background:
+
+```bash
+cd ~/openbim-data-backend
+docker compose up -d
+```
+
+Check that the containers are running:
+
+```bash
+docker compose ps
+```
+
+View API logs:
+
+```bash
+docker compose logs -f api
+```
+
+Stop the stack:
+
+```bash
+docker compose down
+```
+
+## Next immediate task
+
+Confirm that the Dockerized API is reachable.
+
+Run:
+
+```bash
+cd ~/openbim-data-backend
+docker compose up -d
+docker compose ps
+curl http://localhost:8000/health
+```
+
+If `curl` returns a connection error, inspect the API logs:
+
+```bash
+docker compose logs api
+```
+
+## Next development steps
+
+1. Confirm the API responds at:
+
+```text
+http://localhost:8000/health
+```
+
+2. Confirm the FastAPI docs page loads:
+
+```text
+http://localhost:8000/docs
+```
+
+3. Review the current API structure:
+
+```bash
+ls
+cat app/main.py
+cat Dockerfile
+cat docker-compose.yml
+```
+
+4. Add a database health-check endpoint later.
+
+5. Begin IFC ingestion work:
+   - Create an IFC upload endpoint
+   - Store uploaded IFC files in MinIO or another S3-compatible service
+   - Parse IFC files using IfcOpenShell
+   - Extract basic model metadata
+   - Store metadata in PostgreSQL
+
+## Current Docker images
+
+The current Compose setup uses:
+
+- `python:3.14-slim` for the API
+- PostgreSQL
+- Redis
+- Community MinIO image: `netvark/minio:latest`
+
+Before production, reconsider the MinIO image choice and pin specific image versions.
