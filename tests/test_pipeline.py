@@ -50,3 +50,12 @@ def test_persisted_revision_retrieval():
     fetched = client.get(f"/api/v1/models/revisions/{rev_id}")
     assert fetched.status_code == 200
     assert fetched.json()["revision_id"] == rev_id
+
+
+def test_buildingsmart_ids_xml_validation():
+    with (FIXTURES / "duplex.ifc").open("rb") as f_ifc, (FIXTURES / "structural_baseline.ids").open("rb") as f_ids:
+        res = client.post("/api/v1/models/validate-ids", files={"ifc_file": ("duplex.ifc", f_ifc, "application/octet-stream"), "ids_file": ("structural_baseline.ids", f_ids, "application/xml")})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["ids_title"] == "Al-Amin Structural Baseline IDS"
+    assert data["passed_entities"] == 57

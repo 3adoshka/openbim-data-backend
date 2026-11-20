@@ -10,3 +10,4 @@ ifcopenshell>=0.8.0
 pandas>=2.2.0
 pandera>=0.20.0
 minio>=7.2.0
+ifctester>=0.8.0

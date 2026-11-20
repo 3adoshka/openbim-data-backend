@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, init_db, list_revision_ids, load_revision, save_revision
 from app.schemas import BoqValidationReport, ModelIngestionReport, RevisionDiffReport
 from app.services.boq_gate import validate_boq_csv
+from app.services.ids_validator import validate_ifc_against_ids
 from app.services.ifc_engine import ingest_ifc_file
 from app.services.storage import store_ifc_bytes
 from app.services.versioning import diff_revisions
@@ -73,3 +74,15 @@ async def validate_boq_endpoint(file: UploadFile = File(...)) -> BoqValidationRe
         raise HTTPException(status_code=422, detail=f"BoQ validation failed: {exc}") from exc
     finally:
         tmp_path.unlink(missing_ok=True)
+
+@router.post("/models/validate-ids")
+async def validate_ids_endpoint(ifc_file: UploadFile = File(...), ids_file: UploadFile = File(...)) -> dict:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".ifc") as t_ifc, tempfile.NamedTemporaryFile(delete=False, suffix=".ids") as t_ids:
+        t_ifc.write(await ifc_file.read())
+        t_ids.write(await ids_file.read())
+        p_ifc, p_ids = Path(t_ifc.name), Path(t_ids.name)
+    try:
+        return validate_ifc_against_ids(p_ifc, p_ids)
+    finally:
+        p_ifc.unlink(missing_ok=True)
+        p_ids.unlink(missing_ok=True)
