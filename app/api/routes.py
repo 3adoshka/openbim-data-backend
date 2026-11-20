@@ -1,11 +1,12 @@
 from __future__ import annotations
 import tempfile
 from pathlib import Path
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from sqlalchemy.orm import Session
 from app.db import SessionLocal, init_db, list_revision_ids, load_revision, save_revision
 from app.schemas import BoqValidationReport, ModelIngestionReport, RevisionDiffReport
 from app.services.boq_gate import validate_boq_csv
+from app.services.bcf_exporter import build_bcfzip_bytes
 from app.services.ids_validator import validate_ifc_against_ids
 from app.services.ifc_engine import ingest_ifc_file
 from app.services.storage import store_ifc_bytes
@@ -86,3 +87,29 @@ async def validate_ids_endpoint(ifc_file: UploadFile = File(...), ids_file: Uplo
     finally:
         p_ifc.unlink(missing_ok=True)
         p_ids.unlink(missing_ok=True)
+
+
+@router.post("/models/export-bcf")
+async def export_bcf_endpoint(
+    ifc_file: UploadFile = File(...),
+    ids_file: UploadFile | None = File(default=None),
+) -> Response:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".ifc") as t_ifc:
+        t_ifc.write(await ifc_file.read())
+        p_ifc = Path(t_ifc.name)
+    p_ids = None
+    try:
+        if ids_file is not None:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".ids") as t_ids:
+                t_ids.write(await ids_file.read())
+                p_ids = Path(t_ids.name)
+        data = build_bcfzip_bytes(p_ifc, p_ids)
+        return Response(
+            content=data,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": "attachment; filename=audit_issues.bcfzip"},
+        )
+    finally:
+        p_ifc.unlink(missing_ok=True)
+        if p_ids:
+            p_ids.unlink(missing_ok=True)

@@ -59,3 +59,19 @@ def test_buildingsmart_ids_xml_validation():
     data = res.json()
     assert data["ids_title"] == "Al-Amin Structural Baseline IDS"
     assert data["passed_entities"] == 57
+
+
+def test_export_bcfzip_archive():
+    import io, zipfile
+    with (FIXTURES / "duplex.ifc").open("rb") as f_ifc, (FIXTURES / "structural_baseline.ids").open("rb") as f_ids:
+        res = client.post(
+            "/api/v1/models/export-bcf",
+            files={
+                "ifc_file": ("duplex.ifc", f_ifc, "application/octet-stream"),
+                "ids_file": ("structural_baseline.ids", f_ids, "application/xml"),
+            },
+        )
+    assert res.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(res.content)) as zf:
+        assert "bcf.version" in zf.namelist()
+        assert any(n.endswith("/markup.bcf") for n in zf.namelist())

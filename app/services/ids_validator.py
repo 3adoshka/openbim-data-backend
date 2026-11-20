@@ -15,5 +15,6 @@ def validate_ifc_against_ids(ifc_path: Path, ids_path: Path) -> dict:
         f = len(s.failed_entities)
         passed_total += p
         failed_total += f
-        specs.append({"name": s.name, "status": bool(s.status), "passed_count": p, "failed_count": f})
+        failed_items = [{"global_id": getattr(e, "GlobalId", ""), "ifc_class": e.is_a(), "name": getattr(e, "Name", None)} for e in s.failed_entities if getattr(e, "GlobalId", None)]
+        specs.append({"name": s.name, "status": bool(s.status), "passed_count": p, "failed_count": f, "failed_entities": failed_items})
     return {"ids_title": spec_file.info.get("title", ids_path.name), "passed": failed_total == 0, "passed_entities": passed_total, "failed_entities": failed_total, "specifications": specs}
