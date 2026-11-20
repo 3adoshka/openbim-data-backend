@@ -64,12 +64,16 @@ def ingest_ifc_file(filepath: str | Path, check_geometry: bool = True) -> ModelI
 
         geom_status = "HEALTHY"
         geom_error: str | None = None
+        geom_vol = 0.0
+        geom_area = 0.0
         if check_geometry and geom_settings is not None:
             try:
                 shape = ifcopenshell.geom.create_shape(geom_settings, elem)
                 if not shape:
                     raise ValueError("Empty geometric representation")
                 healthy_geom += 1
+                geom_vol = float(ifcopenshell.util.shape.get_volume(shape.geometry))
+                geom_area = float(ifcopenshell.util.shape.get_area(shape.geometry))
             except Exception as exc:
                 geom_status = "CORRUPT_OR_MISSING"
                 geom_error = str(exc).splitlines()[0]
@@ -87,6 +91,10 @@ def ingest_ifc_file(filepath: str | Path, check_geometry: bool = True) -> ModelI
             ids_fail += 1
 
         vol, area = _extract_qto_metrics(elem)
+        if vol == 0.0 and geom_vol > 0.0:
+            vol = geom_vol
+        if area == 0.0 and geom_area > 0.0:
+            area = geom_area
         total_volume += vol
         total_area += area
 

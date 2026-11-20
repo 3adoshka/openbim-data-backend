@@ -19,6 +19,8 @@ def test_ingest_duplex_ifc():
     assert body["total_products"] > 0
     assert body["healthy_geometry_count"] > 0
     assert 0.0 <= body["quality_score"] <= 100.0
+    assert body["qto_totals"]["total_volume_m3"] > 1000.0
+    assert body["qto_totals"]["total_area_m2"] > 4000.0
 
 
 def test_revision_diff_endpoint():
