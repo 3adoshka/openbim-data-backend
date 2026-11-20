@@ -6,3 +6,6 @@ psycopg[binary]==3.3.9
 pydantic==2.14.3
 pydantic-settings==2.16.3
 python-multipart==0.0.34
+ifcopenshell>=0.8.0
+pandas>=2.2.0
+pandera>=0.20.0
