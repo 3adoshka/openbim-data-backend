@@ -40,3 +40,13 @@ def test_boq_quality_gate_catches_dirty_subcontractor_csv():
     assert body["passed"] is False
     assert body["violation_count"] > 0
     assert body["quality_score"] < 100.0
+
+
+def test_persisted_revision_retrieval():
+    ifc_path = FIXTURES / "duplex.ifc"
+    with ifc_path.open("rb") as f:
+        ing = client.post("/api/v1/models/ingest", files={"file": ("duplex.ifc", f, "application/octet-stream")})
+    rev_id = ing.json()["revision_id"]
+    fetched = client.get(f"/api/v1/models/revisions/{rev_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["revision_id"] == rev_id
